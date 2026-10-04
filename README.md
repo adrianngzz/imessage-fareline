@@ -7,7 +7,12 @@ Theme: **FinTech**. One ledger, two doors: iMessage through Photon Spectrum, and
 ![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
 ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
 
-Agent name: **fareline**. The agent address is printed when you start `agent.py`. Keep the same `AGENT_SEED` after you register it.
+Agent name: **fareline**.  
+Agent address: `agent1qt4svle0njg43593l69cp0xt3366d9d6r99wpkfj2sl0mjf02uj9unaplud`  
+Agentverse profile: https://agentverse.ai/agents/details/agent1qt4svle0njg43593l69cp0xt3366d9d6r99wpkfj2sl0mjf02uj9unaplud/profile  
+ASI:One shared chat: https://asi1.ai/shared-chat/df7ebce6-f2e8-40bc-9225-60b8ef04bf9a
+
+Keep `data/agent.seed` (or `AGENT_SEED`) the same after you register on Agentverse. Do not generate a new identity.
 
 Fixed demo names: Riley, Alex, Sam, Jordan. Fare $48.00, payback $16.00. See [GOLDEN_TRANSCRIPT.md](./GOLDEN_TRANSCRIPT.md).
 
@@ -51,13 +56,28 @@ Phrases from the golden transcript work with no model key. For messier lines, pu
 | `SPECTRUM_IMESSAGE` | Spectrum | Set to `1` to add the iMessage provider |
 | `FARELINE_SENDER_MAP` | Spectrum | JSON map of sender id to intern name. Or copy `senders.example.json` to `senders.json` |
 
-## Doors
+## ASI:One / Agentverse door
 
 Start the ledger first. Then:
 
 ```bash
-python agent.py
+AGENT_MAILBOX=1 python agent.py
 ```
+
+Keep both processes running. In ASI:One, turn **Agents** on and prefix every line with who is speaking:
+
+```
+Riley: What do I owe?
+Riley: I paid $48, Alex and Sam rode.
+Alex: I just paid Riley $16.
+Alex: What do I owe?
+```
+
+Discovery keywords for the Agentverse profile: `ride split`, `uber split`, `lyft split`, `intern commute`, `group chat tab`, `who owes whom`, `I paid`, `I'm in`, `what do I owe`, `payback`, `settlement`.
+
+## Spectrum door
+
+Start the ledger first. Then:
 
 ```bash
 bun add spectrum-ts

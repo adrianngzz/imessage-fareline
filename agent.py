@@ -7,6 +7,11 @@ import os
 import re
 import urllib.error
 import urllib.request
+
+import certifi
+
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -60,6 +65,12 @@ chat_proto = Protocol(spec=chat_protocol_spec)
 
 _PREFIX = re.compile(r"^(Riley|Alex|Sam|Jordan)\s*:\s*([\s\S]+)$", re.IGNORECASE)
 _INTRO = re.compile(r"^i(?:'m| am)\s+(riley|alex|sam|jordan)\s*[.!]?\s*$", re.IGNORECASE)
+_MENTIONS = re.compile(r"^(?:@\S+\s+)+")
+
+
+def strip_routing(text: str) -> str:
+    """ASI:One prepends @agent1q… so Riley: is not at the start of the raw line."""
+    return _MENTIONS.sub("", text.strip()).strip()
 
 
 def message_text(msg: ChatMessage) -> str:
@@ -83,12 +94,13 @@ def card_action(text: str) -> str | None:
 
 
 def resolve(ctx: Context, sender: str, text: str) -> tuple[str, str, str | None]:
-    prefixed = _PREFIX.match(text.strip())
+    text = strip_routing(text)
+    prefixed = _PREFIX.match(text)
     if prefixed:
         person = canonical(prefixed.group(1)) or ""
         ctx.storage.set(f"speaker:{sender}", person)
         return person, prefixed.group(2).strip(), None
-    intro = _INTRO.match(text.strip())
+    intro = _INTRO.match(text)
     if intro:
         person = canonical(intro.group(1)) or ""
         ctx.storage.set(f"speaker:{sender}", person)
