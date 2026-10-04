@@ -1,4 +1,4 @@
-# RideTab — instructions for Cursor
+# Fareline — instructions for Cursor
 
 You are implementing the plan in `PLAN.md`. Read that file before writing code.
 

@@ -1,0 +1,12 @@
+{
+  "name": "fareline",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "terminal": "bun spectrum/door.ts",
+    "imessage": "SPECTRUM_IMESSAGE=1 bun spectrum/door.ts"
+  },
+  "dependencies": {
+    "spectrum-ts": "*"
+  }
+}
