@@ -85,6 +85,21 @@ def test_golden_transcript(tmp_path: Path) -> None:
     assert "Alex    $0.00" in balance["reply"]
 
 
+def test_who_is_coming_two_yeses(tmp_path: Path) -> None:
+    ledger = Ledger(tmp_path / "ledger.json")
+    asked = handle("Who's coming this morning?", "Riley", ledger)
+    assert asked["action"] == "rsvp"
+    assert "Riley is in" in asked["reply"]
+    assert asked["roster"] == {"in": ["Riley"], "out": []}
+
+    assert handle("yes", "Alex", ledger)["action"] == "rsvp"
+    second = handle("yeah I'll ride", "Sam", ledger)
+    assert second["action"] == "rsvp"
+    assert "In: Riley, Alex, Sam" in second["reply"]
+    assert "Out: —" in second["reply"]
+    assert ledger.roster["Jordan"] is None
+
+
 def test_total_uses_roster_and_skips_jordan(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
     handle("I'm in", "Riley", ledger)

@@ -5,8 +5,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import ssl
 import urllib.request
 from collections.abc import Callable
+
+import certifi
 
 from fareline.money import dollars_to_cents
 from fareline.people import PEOPLE, canonical
@@ -30,7 +33,8 @@ def interpret(
         return parsed
     try:
         return validate_action(model(text, speaker, roster), speaker)
-    except Exception:
+    except Exception as exc:
+        print(f"LLM fallback: {type(exc).__name__}: {exc}", flush=True)
         return parsed
 
 
@@ -51,9 +55,18 @@ def keyword_intent(text: str, speaker: str, roster: dict | None = None) -> dict:
             return _clarify("Who's asking? Use Riley, Alex, Sam, or Jordan.")
         return {"action": "get_balance", "person": who}
 
+    if re.search(r"\bwho(?:'s|s| is)\s+(coming|in|riding|going)\b", lowered):
+        return _rsvp(who, True)
+
     if re.search(r"\b(i'm|im|i am)\s+out\b", lowered):
         return _rsvp(who, False)
     if re.search(r"\b(i'm|im|i am)\s+in\b", lowered):
+        return _rsvp(who, True)
+    if re.fullmatch(r"(yes|yeah|yep|yup|yea)[.!]*", lowered):
+        return _rsvp(who, True)
+    if re.fullmatch(r"(no|nope|nah)[.!]*", lowered):
+        return _rsvp(who, False)
+    if re.search(r"\b(?:count me in|i(?:'ll| will) ride)\b", lowered):
         return _rsvp(who, True)
 
     payback = re.search(rf"\b(?:i\s+)?(?:just\s+)?paid\s+{_NAME}\s+{_AMOUNT}\b", lowered)
@@ -204,7 +217,8 @@ def model_from_env() -> Model | None:
             },
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=20) as response:
+        context = ssl.create_default_context(cafile=certifi.where())
+        with urllib.request.urlopen(request, timeout=20, context=context) as response:
             body = json.loads(response.read().decode())
         content = body["choices"][0]["message"]["content"]
         return _extract_json(content)
@@ -225,6 +239,7 @@ Reply with only one of:
 {"action":"undo"}
 {"action":"clarify","question":"one question"}
 
+"Who's coming" / "who's in" means the speaker is in. Yes / yeah / yep is rsvp in. No / nope is rsvp out.
 The payer is always a rider. If payer, riders, or amount are missing, return clarify and ask one question.
 Never invent a payment, a rider, or an amount."""
 

@@ -45,13 +45,17 @@ def make_handler(ledger: Ledger, model=None):
                 return
             result = handle(text, speaker, ledger, model)
             print(f"{speaker}: {text} -> {result['action']}", flush=True)
+            reply = result.get("reply")
+            if isinstance(reply, str) and reply.strip():
+                print(reply, flush=True)
+            print("", flush=True)
             self._send(200, result)
 
         def log_message(self, fmt: str, *args) -> None:
             return
 
         def _send(self, status: int, payload: dict) -> None:
-            data = json.dumps(payload).encode()
+            data = json.dumps(payload, indent=2, ensure_ascii=False).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(data)))
