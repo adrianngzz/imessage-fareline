@@ -16,7 +16,8 @@ from fareline.people import PEOPLE, canonical
 
 Model = Callable[[str, str, dict], dict]
 
-_NAME = r"(riley|alex|sam|jordan)"
+_NAME = "(" + "|".join(name.lower() for name in PEOPLE) + ")"
+_WHO = ", ".join(PEOPLE)
 _AMOUNT = r"\$?\s*(\d+(?:\.\d{1,2})?)"
 
 
@@ -52,7 +53,7 @@ def keyword_intent(text: str, speaker: str, roster: dict | None = None) -> dict:
         return {"action": "get_balance", "person": canonical(named_balance.group(1))}
     if re.search(r"what do i owe|what(?:'s| is) my balance|running net", lowered):
         if who is None:
-            return _clarify("Who's asking? Use Riley, Alex, Sam, or Jordan.")
+            return _clarify(f"Who's asking? Use {_WHO}.")
         return {"action": "get_balance", "person": who}
 
     if re.search(r"\bwho(?:'s|s| is)\s+(coming|in|riding|going)\b", lowered):
@@ -72,7 +73,7 @@ def keyword_intent(text: str, speaker: str, roster: dict | None = None) -> dict:
     payback = re.search(rf"\b(?:i\s+)?(?:just\s+)?paid\s+{_NAME}\s+{_AMOUNT}\b", lowered)
     if payback:
         if who is None:
-            return _clarify("Who paid? Use Riley, Alex, Sam, or Jordan.")
+            return _clarify(f"Who paid? Use {_WHO}.")
         cents = dollars_to_cents(payback.group(2))
         payee = canonical(payback.group(1))
         if cents is None or payee is None:
@@ -159,7 +160,7 @@ def validate_action(raw: object, speaker: str) -> dict:
         for name in riders_in:
             person = canonical(name)
             if person is None:
-                return _clarify("I only know Riley, Alex, Sam, and Jordan. Who rode?")
+                return _clarify(f"I only know {_WHO}. Who rode?")
             if person not in riders:
                 riders.append(person)
         if payer not in riders:
@@ -228,14 +229,14 @@ def model_from_env() -> Model | None:
 
 _SYSTEM = """You turn one intern commute group-chat line into one JSON object. You do not split fares or decide who owes whom.
 
-Known people: Riley, Alex, Sam, Jordan. "I" and "me" mean the speaker.
+Known people: Adrian, Tessa, John. "I" and "me" mean the speaker.
 Convert dollars to integer cents in amount_cents. $48 is 4800. $16.50 is 1650. Never output a float.
 
 Reply with only one of:
-{"action":"rsvp","person":"Riley","in":true}
-{"action":"record_fare","payer":"Riley","amount_cents":4800,"riders":["Riley","Alex","Sam"]}
-{"action":"record_payback","from":"Alex","to":"Riley","amount_cents":1600}
-{"action":"get_balance","person":"Alex"}
+{"action":"rsvp","person":"Adrian","in":true}
+{"action":"record_fare","payer":"Adrian","amount_cents":4800,"riders":["Adrian","Tessa","John"]}
+{"action":"record_payback","from":"Tessa","to":"Adrian","amount_cents":1600}
+{"action":"get_balance","person":"Tessa"}
 {"action":"undo"}
 {"action":"clarify","question":"one question"}
 
@@ -258,7 +259,7 @@ def _riders_from_text(lowered: str, payer: str, roster: dict, mentioned_rode: bo
 
 def _rsvp(person: str | None, is_in: bool) -> dict:
     if person is None:
-        return _clarify("Who is in or out? Use Riley, Alex, Sam, or Jordan.")
+        return _clarify(f"Who is in or out? Use {_WHO}.")
     return {"action": "rsvp", "person": person, "in": is_in}
 
 

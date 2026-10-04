@@ -8,138 +8,134 @@ from fareline.intents import interpret, validate_action
 from fareline.ledger import Ledger
 from fareline.server import serve
 
-FARE = """Got it — Riley paid $48.00. Riders: Riley, Alex, Sam.
+FARE = """Got it — Adrian paid $48.00. Riders: Adrian, Tessa, John.
 Even split: $16.00 each.
-Alex owes Riley $16.00
-Sam owes Riley $16.00
+Tessa owes Adrian $16.00
+John owes Adrian $16.00
 
 Running net:
-  Riley  +$32.00
-  Alex   −$16.00
-  Sam    −$16.00
-  Jordan  $0.00"""
+  Adrian +$32.00
+  Tessa  −$16.00
+  John   −$16.00"""
 
-PAYBACK = """Got it — Alex paid Riley $16.00.
-Alex is settled with Riley.
-Sam owes Riley $16.00.
+PAYBACK = """Got it — Tessa paid Adrian $16.00.
+Tessa is settled with Adrian.
+John owes Adrian $16.00.
 
 Running net:
-  Riley  +$16.00
-  Alex    $0.00
-  Sam    −$16.00
-  Jordan  $0.00"""
+  Adrian +$16.00
+  Tessa   $0.00
+  John   −$16.00"""
 
 
 def test_fare_split_and_nets(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    ledger.record_fare("Riley", 4800, ["Riley", "Alex", "Sam"])
-    assert ledger.nets() == {"Riley": 3200, "Alex": -1600, "Sam": -1600, "Jordan": 0}
+    ledger.record_fare("Adrian", 4800, ["Adrian", "Tessa", "John"])
+    assert ledger.nets() == {"Adrian": 3200, "Tessa": -1600, "John": -1600}
 
 
 def test_payback_clears_one_pair(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    ledger.record_fare("Riley", 4800, ["Riley", "Alex", "Sam"])
-    ledger.record_payback("Alex", "Riley", 1600)
-    assert ledger.nets() == {"Riley": 1600, "Alex": 0, "Sam": -1600, "Jordan": 0}
-    assert ledger.settlements() == [{"from": "Sam", "to": "Riley", "amount_cents": 1600}]
+    ledger.record_fare("Adrian", 4800, ["Adrian", "Tessa", "John"])
+    ledger.record_payback("Tessa", "Adrian", 1600)
+    assert ledger.nets() == {"Adrian": 1600, "Tessa": 0, "John": -1600}
+    assert ledger.settlements() == [{"from": "John", "to": "Adrian", "amount_cents": 1600}]
 
 
-def test_jordan_out_is_unchanged(tmp_path: Path) -> None:
+def test_john_out_is_unchanged(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    ledger.rsvp("Jordan", False)
-    ledger.record_fare("Riley", 4800, ["Riley", "Alex", "Sam"])
-    assert ledger.roster["Jordan"] is False
-    assert ledger.nets()["Jordan"] == 0
+    ledger.rsvp("John", False)
+    ledger.record_fare("Adrian", 4800, ["Adrian", "Tessa"])
+    assert ledger.roster["John"] is False
+    assert ledger.nets()["John"] == 0
+    assert ledger.nets()["Tessa"] == -2400
 
 
 def test_balance_before_payback(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    reply = handle("I paid $48, Alex and Sam rode.", "Riley", ledger)["reply"]
+    reply = handle("I paid $48, Tessa and John rode.", "Adrian", ledger)["reply"]
     assert reply == FARE
-    balance = handle("What do I owe?", "Alex", ledger)["reply"]
-    assert "Alex, you owe Riley $16.00." in balance
+    balance = handle("What do I owe?", "Tessa", ledger)["reply"]
+    assert "Tessa, you owe Adrian $16.00." in balance
 
 
 def test_golden_transcript(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    assert "In: Riley" in handle("I'm in", "Riley", ledger)["reply"]
-    handle("I'm in", "Alex", ledger)
-    handle("I'm in", "Sam", ledger)
-    roster = handle("I'm out", "Jordan", ledger)["reply"]
-    assert "In: Riley, Alex, Sam" in roster
-    assert "Out: Jordan" in roster
+    assert "In: Adrian" in handle("I'm in", "Adrian", ledger)["reply"]
+    handle("I'm in", "Tessa", ledger)
+    roster = handle("I'm in", "John", ledger)["reply"]
+    assert "In: Adrian, Tessa, John" in roster
+    assert "Out: —" in roster
 
-    fare = handle("I paid $48, Alex and Sam rode.", "Riley", ledger)
+    fare = handle("I paid $48, Tessa and John rode.", "Adrian", ledger)
     assert fare["reply"] == FARE
     assert fare["card_kind"] == "detail"
-    assert fare["nets_cents"]["Riley"] == 3200
+    assert fare["nets_cents"]["Adrian"] == 3200
 
-    payback = handle("I just paid Riley $16.", "Alex", ledger)
+    payback = handle("I just paid Adrian $16.", "Tessa", ledger)
     assert payback["reply"] == PAYBACK
     assert payback["card_kind"] == "detail"
 
-    balance = handle("What do I owe?", "Alex", ledger)
+    balance = handle("What do I owe?", "Tessa", ledger)
     assert balance["card"] is None
-    assert "you’re settled with Riley" in balance["reply"]
-    assert "Sam owes Riley $16.00." in balance["reply"]
-    assert "Alex    $0.00" in balance["reply"]
+    assert "you’re settled with Adrian" in balance["reply"]
+    assert "John owes Adrian $16.00." in balance["reply"]
+    assert "Tessa   $0.00" in balance["reply"]
 
 
 def test_who_is_coming_two_yeses(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    asked = handle("Who's coming this morning?", "Riley", ledger)
+    asked = handle("Who's coming this morning?", "Adrian", ledger)
     assert asked["action"] == "rsvp"
-    assert "Riley is in" in asked["reply"]
-    assert asked["roster"] == {"in": ["Riley"], "out": []}
+    assert "Adrian is in" in asked["reply"]
+    assert asked["roster"] == {"in": ["Adrian"], "out": []}
 
-    assert handle("yes", "Alex", ledger)["action"] == "rsvp"
-    second = handle("yeah I'll ride", "Sam", ledger)
+    assert handle("yes", "Tessa", ledger)["action"] == "rsvp"
+    second = handle("yeah I'll ride", "John", ledger)
     assert second["action"] == "rsvp"
-    assert "In: Riley, Alex, Sam" in second["reply"]
+    assert "In: Adrian, Tessa, John" in second["reply"]
     assert "Out: —" in second["reply"]
-    assert ledger.roster["Jordan"] is None
 
 
-def test_total_uses_roster_and_skips_jordan(tmp_path: Path) -> None:
+def test_total_uses_roster(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    handle("I'm in", "Riley", ledger)
-    handle("I'm in", "Alex", ledger)
-    handle("I'm in", "Sam", ledger)
-    handle("I'm out", "Jordan", ledger)
-    result = handle("The total is $48", "Riley", ledger)
+    handle("I'm in", "Adrian", ledger)
+    handle("I'm in", "Tessa", ledger)
+    handle("I'm in", "John", ledger)
+    result = handle("The total is $48", "Adrian", ledger)
     assert result["reply"] == FARE
-    assert result["nets_cents"]["Jordan"] == 0
+    assert result["nets_cents"]["John"] == -1600
 
 
 def test_remainder_stays_with_payer(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    ledger.record_fare("Riley", 4801, ["Riley", "Alex", "Sam"])
-    assert ledger.nets() == {"Riley": 3200, "Alex": -1600, "Sam": -1600, "Jordan": 0}
+    ledger.record_fare("Adrian", 4801, ["Adrian", "Tessa", "John"])
+    assert ledger.nets() == {"Adrian": 3200, "Tessa": -1600, "John": -1600}
 
 
 def test_undo_is_one_level(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    handle("I paid $48, Alex and Sam rode.", "Riley", ledger)
-    undone = handle("wait that's wrong", "Riley", ledger)
-    assert undone["nets_cents"] == {"Riley": 0, "Alex": 0, "Sam": 0, "Jordan": 0}
+    handle("I paid $48, Tessa and John rode.", "Adrian", ledger)
+    undone = handle("wait that's wrong", "Adrian", ledger)
+    assert undone["nets_cents"] == {"Adrian": 0, "Tessa": 0, "John": 0}
     assert "Undid the last fare." in undone["reply"]
-    again = handle("undo", "Alex", ledger)
+    again = handle("undo", "Tessa", ledger)
     assert again["reply"] == "Nothing to undo."
 
 
 def test_reload_keeps_nets(tmp_path: Path) -> None:
     path = tmp_path / "ledger.json"
     first = Ledger(path)
-    first.record_fare("Riley", 4800, ["Riley", "Alex", "Sam"])
+    first.record_fare("Adrian", 4800, ["Adrian", "Tessa", "John"])
     second = Ledger(path)
-    assert second.nets()["Alex"] == -1600
+    assert second.nets()["Tessa"] == -1600
 
 
 def test_missing_riders_clarify(tmp_path: Path) -> None:
     ledger = Ledger(tmp_path / "ledger.json")
-    result = handle("I paid $48", "Riley", ledger)
+    result = handle("I paid $48", "Adrian", ledger)
     assert result["action"] == "clarify"
-    assert result["nets_cents"]["Riley"] == 0
+    assert result["nets_cents"]["Adrian"] == 0
 
 
 def test_keyword_wins_over_model() -> None:
@@ -149,7 +145,7 @@ def test_keyword_wins_over_model() -> None:
         calls.append(text)
         return {"action": "undo"}
 
-    action = interpret("I paid $48, Alex and Sam rode.", "Riley", {}, model)
+    action = interpret("I paid $48, Tessa and John rode.", "Adrian", {}, model)
     assert action["action"] == "record_fare"
     assert action["amount_cents"] == 4800
     assert calls == []
@@ -159,16 +155,16 @@ def test_model_fills_gaps_and_cannot_pass_a_share() -> None:
     def model(text: str, speaker: str, roster: dict) -> dict:
         return {
             "action": "record_fare",
-            "payer": "Riley",
+            "payer": "Adrian",
             "amount_cents": 4800,
-            "riders": ["Alex", "Sam"],
+            "riders": ["Tessa", "John"],
             "share": 16,
         }
 
-    action = interpret("covered the lyft", "Riley", {}, model)
-    assert action["riders"] == ["Riley", "Alex", "Sam"]
+    action = interpret("covered the lyft", "Adrian", {}, model)
+    assert action["riders"] == ["Adrian", "Tessa", "John"]
     assert "share" not in action
-    validated = validate_action({"action": "record_fare", "amount_cents": 48.5}, "Riley")
+    validated = validate_action({"action": "record_fare", "amount_cents": 48.5}, "Adrian")
     assert validated["action"] == "clarify"
 
 
@@ -180,7 +176,7 @@ def test_act_and_nets_http(tmp_path: Path) -> None:
     thread.start()
     try:
         payload = json.dumps(
-            {"speaker": "Riley", "text": "I paid $48, Alex and Sam rode."}
+            {"speaker": "Adrian", "text": "I paid $48, Tessa and John rode."}
         ).encode()
         request = urllib.request.Request(
             f"http://127.0.0.1:{port}/act",
@@ -193,7 +189,18 @@ def test_act_and_nets_http(tmp_path: Path) -> None:
         assert body["reply"] == FARE
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/nets") as response:
             nets = json.loads(response.read().decode())
-        assert nets["nets_cents"]["Sam"] == -1600
+        assert nets["nets_cents"]["John"] == -1600
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_old_names_are_dropped_on_load(tmp_path: Path) -> None:
+    path = tmp_path / "ledger.json"
+    path.write_text(
+        '{"roster":{"Riley":true},"events":[{"type":"fare","payer":"Riley","amount_cents":4800,"riders":["Riley","Alex"]}],"can_undo":true}\n',
+        encoding="utf-8",
+    )
+    ledger = Ledger(path)
+    assert ledger.events == []
+    assert ledger.nets() == {"Adrian": 0, "Tessa": 0, "John": 0}

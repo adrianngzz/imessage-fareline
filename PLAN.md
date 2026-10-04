@@ -24,7 +24,7 @@ Do this before anyone opens a code editor.
   - MHacks Devpost
   - A **public** GitHub repo (this workspace is a new project until you click Create repo)
 
-Write the intern names you will demo with on a sticky note and never change them: **Alex, Sam, Jordan, Riley**. You are Riley (or whoever is holding the phone). Consistency saves the video.
+Demo names: **Adrian, Tessa, John**. Adrian is the Apple ID signed into Messages on this Mac. Spectrum replies from that account; it is not a fourth person on the tab.
 
 ---
 
@@ -40,8 +40,8 @@ Fareline sits in the group chat and does four things in natural language:
 | Someone says                                          | Agent does                                                                                                   |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | “I’m in” / “I’m out”                                  | Updates today’s rider roster                                                                                 |
-| “I paid $48, Alex and Sam rode.” / "The total is $48" | Splits evenly, remembers who paid, either based on the message, or the chat history of today's rider roster. |
-| “I just paid Alex $45.”                               | Moves that amount off the balance                                                                            |
+| “I paid $48, Tessa and John rode.” / "The total is $48" | Splits evenly, remembers who paid, either based on the message, or the chat history of today's rider roster. |
+| “I just paid Adrian $16.”                               | Moves that amount off the balance                                                                            |
 | “What do I owe?”                                      | Answers from the running net                                                                                 |
 
 
@@ -84,10 +84,10 @@ Rules that match the intern story:
 
 Write tests for these four cases before any model call:
 
-1. Riley pays $48; Riley, Alex, Sam rode → Alex −16, Sam −16, Riley +32
-2. Alex pays Riley $16 → Alex 0 vs Riley, Sam still −16
-3. Jordan is out, then a fare that does not include Jordan → Jordan’s net unchanged
-4. “What do I owe?” as Alex after (1) and before (2) → “You owe Riley $16”
+1. Adrian pays $48; Adrian, Tessa, John rode → Tessa −16, John −16, Adrian +32
+2. Tessa pays Adrian $16 → Tessa 0 vs Adrian, John still −16
+3. John is out, then a fare that does not include John → John’s net unchanged
+4. “What do I owe?” as Tessa after (1) and before (2) → “You owe Adrian $16”
 
 ### Layer 2 — Intents (this is the “AI”)
 
@@ -113,19 +113,18 @@ Use integer cents everywhere (`4800`, not `48.0`). Display dollars.
 After every fare or payback, the reply must look like this, every time:
 
 ```
-Got it — Riley paid $48.00. Riders: Riley, Alex, Sam.
+Got it — Adrian paid $48.00. Riders: Adrian, Tessa, John.
 Even split: $16.00 each.
-Alex owes Riley $16.00
-Sam owes Riley $16.00
+Tessa owes Adrian $16.00
+John owes Adrian $16.00
 
 Running net:
-  Riley  +$32.00
-  Alex   −$16.00
-  Sam    −$16.00
-  Jordan  $0.00
+  Adrian +$32.00
+  Tessa  −$16.00
+  John   −$16.00
 ```
 
-Same shape after a payback. Same shape on “what do I owe?” (just skip the event recap and answer the person). The group can then say “wait, Jordan rode too” and you undo or record a correction. Judges will see this as intelligent because it is inspectable.
+Same shape after a payback. Same shape on “what do I owe?” (just skip the event recap and answer the person). The group can then say “wait, John rode too” and you undo or record a correction. Judges will see this as intelligent because it is inspectable.
 
 ### Layer 4 — Doors (adapters only)
 

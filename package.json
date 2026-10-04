@@ -3,10 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "terminal": "bun spectrum/door.ts",
-    "imessage": "SPECTRUM_IMESSAGE=1 bun spectrum/door.ts"
+    "terminal": "node spectrum/door.ts",
+    "imessage": "node spectrum/mac-app.ts",
+    "imessage:cloud": "SPECTRUM_IMESSAGE=1 node spectrum/door.ts",
+    "test:spectrum": "node --test spectrum/speakers.test.ts"
   },
   "dependencies": {
-    "spectrum-ts": "*"
+    "@spectrum-ts/imessage-local": "^12.10.1",
+    "spectrum-ts": "^12.10.1"
   }
 }

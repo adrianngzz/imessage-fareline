@@ -1,6 +1,6 @@
-"""The four interns in the demo. Names stay fixed so the videos match the tests."""
+"""The people on the tab. Names stay fixed so the chat and the tests match."""
 
-PEOPLE = ("Riley", "Alex", "Sam", "Jordan")
+PEOPLE = ("Adrian", "Tessa", "John")
 
 
 def canonical(name: object) -> str | None:

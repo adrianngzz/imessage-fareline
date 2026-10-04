@@ -63,13 +63,13 @@ else:
 agent = Agent(**agent_kwargs)
 chat_proto = Protocol(spec=chat_protocol_spec)
 
-_PREFIX = re.compile(r"^(Riley|Alex|Sam|Jordan)\s*:\s*([\s\S]+)$", re.IGNORECASE)
-_INTRO = re.compile(r"^i(?:'m| am)\s+(riley|alex|sam|jordan)\s*[.!]?\s*$", re.IGNORECASE)
+_PREFIX = re.compile(r"^(Adrian|Tessa|John)\s*:\s*([\s\S]+)$", re.IGNORECASE)
+_INTRO = re.compile(r"^i(?:'m| am)\s+(adrian|tessa|john)\s*[.!]?\s*$", re.IGNORECASE)
 _MENTIONS = re.compile(r"^(?:@\S+\s+)+")
 
 
 def strip_routing(text: str) -> str:
-    """ASI:One prepends @agent1q… so Riley: is not at the start of the raw line."""
+    """ASI:One prepends @agent1q… so Adrian: is not at the start of the raw line."""
     return _MENTIONS.sub("", text.strip()).strip()
 
 
@@ -168,11 +168,11 @@ async def on_message(ctx: Context, sender: str, msg: ChatMessage) -> None:
         await ctx.send(sender, chat_from(immediate))
         return
     if not speaker and body == "undo":
-        speaker = "Riley"
+        speaker = "Adrian"
     if not speaker:
         await ctx.send(
             sender,
-            chat_from("Who's asking? Start the line with Riley:, Alex:, Sam:, or Jordan:."),
+            chat_from("Who's asking? Start the line with Adrian:, Tessa:, or John:."),
         )
         return
     if not body:

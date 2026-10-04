@@ -154,8 +154,12 @@ class Ledger:
         for person in PEOPLE:
             value = roster.get(person)
             self.roster[person] = None if value is None else bool(value)
-        self.events = list(raw.get("events") or [])
-        self.can_undo = bool(raw.get("can_undo", False))
+        stored = list(raw.get("events") or [])
+        self.events = [event for event in stored if _known_event(event)]
+        self.can_undo = bool(raw.get("can_undo", False)) and len(self.events) == len(stored)
+        if len(self.events) != len(stored):
+            self.can_undo = False
+            self._save()
 
     def _save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -198,6 +202,16 @@ def _collapse(table: dict[str, dict[str, int]]) -> None:
             else:
                 table[right][left] = right_is_owed - left_is_owed
                 table[left][right] = 0
+
+
+def _known_event(event: dict) -> bool:
+    if event.get("type") == "fare":
+        names = [event.get("payer"), *(event.get("riders") or [])]
+    elif event.get("type") == "payback":
+        names = [event.get("from"), event.get("to")]
+    else:
+        return False
+    return all(isinstance(name, str) and name in PEOPLE for name in names)
 
 
 def _unique(names: list[str]) -> list[str]:

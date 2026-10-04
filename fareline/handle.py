@@ -19,7 +19,7 @@ def handle(text: str, speaker: str, ledger: Ledger, model=None) -> dict:
     who = canonical(speaker)
     if who is None:
         return _result(
-            "Who's speaking? Use Riley, Alex, Sam, or Jordan.",
+            "Who's speaking? Use Adrian, Tessa, or John.",
             {"action": "clarify", "question": "Who's speaking?"},
             ledger,
         )

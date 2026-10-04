@@ -14,7 +14,7 @@ ASI:One shared chat: https://asi1.ai/shared-chat/df7ebce6-f2e8-40bc-9225-60b8ef0
 
 Keep `data/agent.seed` (or `AGENT_SEED`) the same after you register on Agentverse. Do not generate a new identity.
 
-Fixed demo names: Riley, Alex, Sam, Jordan. Fare $48.00, payback $16.00. See [GOLDEN_TRANSCRIPT.md](./GOLDEN_TRANSCRIPT.md).
+Fixed names: Adrian, Tessa, John. Fare $48.00, payback $16.00. See [GOLDEN_TRANSCRIPT.md](./GOLDEN_TRANSCRIPT.md).
 
 ## Run the ledger
 
@@ -31,7 +31,7 @@ python -m fareline
 
 The server listens on `http://127.0.0.1:8787`.
 
-- `POST /act` with `{"speaker":"Riley","text":"I paid $48, Alex and Sam rode."}`
+- `POST /act` with `{"speaker":"Adrian","text":"I paid $48, Tessa and John rode."}`
 - `GET /nets` shows the cents after a restart
 
 Phrases from the golden transcript work with no model key. For messier lines, put `ASI_ONE_API_KEY=...` in a `.env` file in this directory and restart the ledger. The model only emits an action. The ledger computes the split.
@@ -51,9 +51,10 @@ Phrases from the golden transcript work with no model key. For messier lines, pu
 | `AGENT_PORT` | uAgent | Default `8001` |
 | `AGENT_ENDPOINT` | uAgent | Public `https://…/submit` URL when you tunnel |
 | `AGENT_MAILBOX` | uAgent | Set to `1` to use an Agentverse mailbox instead of a tunnel |
-| `SPECTRUM_PROJECT_ID` | Spectrum | iMessage only |
-| `SPECTRUM_PROJECT_SECRET` | Spectrum | iMessage only |
-| `SPECTRUM_IMESSAGE` | Spectrum | Set to `1` to add the iMessage provider |
+| `SPECTRUM_PROJECT_ID` | Spectrum cloud | One-on-one iMessage. Shared-pool lines do not join groups |
+| `SPECTRUM_PROJECT_SECRET` | Spectrum cloud | One-on-one iMessage |
+| `SPECTRUM_IMESSAGE` | Spectrum cloud | Set to `1` with `npm run imessage:cloud` |
+| `FARELINE_SPACE` | Local iMessage | Chat id to answer. Other Messages chats are ignored |
 | `FARELINE_SENDER_MAP` | Spectrum | JSON map of sender id to intern name. Or copy `senders.example.json` to `senders.json` |
 
 ## ASI:One / Agentverse door
@@ -67,27 +68,37 @@ AGENT_MAILBOX=1 python agent.py
 Keep both processes running. In ASI:One, turn **Agents** on and prefix every line with who is speaking:
 
 ```
-Riley: What do I owe?
-Riley: I paid $48, Alex and Sam rode.
-Alex: I just paid Riley $16.
-Alex: What do I owe?
+Adrian: What do I owe?
+Adrian: I paid $48, Tessa and John rode.
+Tessa: I just paid Adrian $16.
+Tessa: What do I owe?
 ```
 
 Discovery keywords for the Agentverse profile: `ride split`, `uber split`, `lyft split`, `intern commute`, `group chat tab`, `who owes whom`, `I paid`, `I'm in`, `what do I owe`, `payback`, `settlement`.
 
 ## Spectrum door
 
-Start the ledger first. Then:
+Stable Spectrum (`spectrum-ts` 12). The terminal and both iMessage providers call the same `POST /act` loop. Start the ledger first.
 
 ```bash
-bun add spectrum-ts
-bun run terminal
+npm install
+npm run terminal
 ```
 
-iMessage, after the terminal transcript works:
+In the terminal, type `Adrian: I paid $48, Tessa and John rode.`
+
+Group iMessage uses this Mac’s Messages account, through `@spectrum-ts/imessage-local`. A Photon shared-pool line only delivers one-on-one DMs; a group thread on a cloud line needs the Business plan. Local Messages can already sit in a group you are in. Sign into Messages, grant this process Full Disk Access to `~/Library/Messages/chat.db`, then:
 
 ```bash
-SPECTRUM_IMESSAGE=1 bun spectrum/door.ts
+npm run imessage
 ```
 
-Photon and Agentverse setup is in [PLAN.md](./PLAN.md).
+The process prints each chat id and does not reply until you set `FARELINE_SPACE` to that id and restart. A contact whose first name is Adrian, Tessa, or John is that person, with no prefix. Otherwise start one line with `Adrian:`; that phone is remembered in `data/imessage-speakers.json`. `senders.json` can still map a phone or email explicitly.
+
+Cloud DMs, after a Photon project id and secret are in the environment:
+
+```bash
+npm run imessage:cloud
+```
+
+Photon setup notes are in [PLAN.md](./PLAN.md). Stable docs: [Getting started](https://photon.codes/docs/spectrum-ts/getting-started), [iMessage](https://photon.codes/docs/spectrum-ts/providers/imessage).
